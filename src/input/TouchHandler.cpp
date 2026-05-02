@@ -120,6 +120,15 @@ bool TouchHandler::poll(TouchEvent &event) {
   }
   consecutiveReadFailures_ = 0;
 
+  if (data[5] == 0x80) {
+    const uint32_t nowMs = millis();
+    if (nowMs - lastHomeButtonMs_ >= 400) {
+      Serial.println("[touch] home button pressed");
+      homeButtonPressed_ = true;
+      lastHomeButtonMs_ = nowMs;
+    }
+  }
+
   const bool validMarker =
       (data[6] == 0xAB) && (data[0] != 0xAB) && (data[0] != 0x00) && (data[5] != 0x80);
   const uint8_t points = validMarker ? (data[5] & 0x7F) : 0;
