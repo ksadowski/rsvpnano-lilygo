@@ -26,22 +26,21 @@ constexpr int kPanelNativeHeight = BoardConfig::PANEL_NATIVE_HEIGHT;
 constexpr int kMinTextScale = 1;
 constexpr int kMaxTextScale = 1;
 constexpr uint8_t kGlyphAlphaThreshold = 16;
-// All color constants are in BGR565 format (bits[15:11]=blue, bits[4:0]=red)
-// because the display is configured with MADCTL BGR=1. Black/white/neutral
-// grays with equal R=B are unaffected. To derive a constant from a desired
-// display color (R,G,B): value = (B>>3)<<11 | (G>>2)<<5 | (R>>3).
+// Color constants are in standard RGB565 format. The display has both BGR=1 and INVON
+// active, which together cancel out: BGR swaps R/B channels, INVON inverts all bits,
+// resulting in correct RGB display. Formula: value = (R>>3)<<11 | (G>>2)<<5 | (B>>3).
 constexpr uint16_t kTrueBlack = 0x0000;   // display: #000000
 constexpr uint16_t kPureWhite = 0xFFFF;   // display: #FFFFFF
-constexpr uint16_t kDarkBackground = 0x0883;  // display: #1A1208 dark warm brown
-constexpr uint16_t kDarkWordColor = 0xBEFE;   // display: #F0DEB8 warm cream
-constexpr uint16_t kDarkFocusColor = 0x439C;  // display: #E07040 amber-red
+constexpr uint16_t kDarkBackground = 0x1881;  // display: #1A1208 dark warm brown
+constexpr uint16_t kDarkWordColor = 0xF6F7;   // display: #F0DEB8 warm cream
+constexpr uint16_t kDarkFocusColor = 0xE388;  // display: #E07040 amber-red
 constexpr uint16_t kLightWordColor = 0x0000;  // display: #000000 black
-constexpr uint16_t kFocusLetterColor = 0x001F; // display: #FF0000 red
-constexpr uint16_t kNightWordColor = 0x04FF;  // display: #F89C00 amber
-constexpr uint16_t kNightFocusColor = 0x031E; // display: #E06000 orange
-constexpr uint16_t kDarkMenuDimColor = 0x5391; // display: #8A7255 muted warm
+constexpr uint16_t kFocusLetterColor = 0xF800; // display: #FF0000 red
+constexpr uint16_t kNightWordColor = 0xFCE0;  // display: #F89C00 amber
+constexpr uint16_t kNightFocusColor = 0xFA80; // display: #E06000 orange
+constexpr uint16_t kDarkMenuDimColor = 0x8B8A; // display: #8A7255 muted warm
 constexpr uint16_t kLightMenuDimColor = 0x6B4D; // display: ~#696969 mid gray
-constexpr uint16_t kDarkFooterColor = 0x42CD;  // display: #6B5843 warm brown
+constexpr uint16_t kDarkFooterColor = 0x6AC8;  // display: #6B5843 warm brown
 constexpr uint16_t kLightFooterColor = 0x5ACB; // display: ~#585858 dark gray
 constexpr uint8_t kNightDimAlpha = 92;
 constexpr uint8_t kNightFooterAlpha = 132;
@@ -1002,14 +1001,12 @@ uint16_t DisplayManager::blendOverBackground(uint16_t rgb565, uint8_t alpha) con
 
   const uint16_t bg = backgroundColor();
   const uint32_t inverseAlpha = 255U - alpha;
-  // Display is BGR mode: bits[15:11]=blue, bits[4:0]=red
   const uint32_t r =
-      ((((rgb565 & 0x1F) * alpha) + ((bg & 0x1F) * inverseAlpha)) / 255U);
+      ((((rgb565 >> 11) & 0x1F) * alpha) + (((bg >> 11) & 0x1F) * inverseAlpha)) / 255U;
   const uint32_t g =
       ((((rgb565 >> 5) & 0x3F) * alpha) + (((bg >> 5) & 0x3F) * inverseAlpha)) / 255U;
-  const uint32_t b =
-      ((((rgb565 >> 11) & 0x1F) * alpha) + (((bg >> 11) & 0x1F) * inverseAlpha)) / 255U;
-  return static_cast<uint16_t>((b << 11) | (g << 5) | r);
+  const uint32_t b = (((rgb565 & 0x1F) * alpha) + ((bg & 0x1F) * inverseAlpha)) / 255U;
+  return static_cast<uint16_t>((r << 11) | (g << 5) | b);
 }
 
 int DisplayManager::chooseTextScale(const String &word) const {

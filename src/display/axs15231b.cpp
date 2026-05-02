@@ -192,6 +192,8 @@ void axs15231bInit() {
     sendCommandWithData(0x2B, d, 4);  // RASET: 0..479
   }
 
+  sendCommand(0x21);  // INVON: enable display inversion
+  delay(10);
   sendCommand(0x29);  // Display On
   delay(20);
 
