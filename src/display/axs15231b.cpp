@@ -120,11 +120,12 @@ void axs15231bInit() {
     sendCommandWithData(0xF0, d, 1);  // Enable extension command 2 part II
   }
   {
-    // MADCTL: MY=1 (reverse row order). MY flips the portrait row
+    // MADCTL: MY=1 (reverse row order) + BGR=1. MY flips the portrait row
     // direction so the 90°-CCW panel mounting aligns with DisplayManager's
-    // UI_ROTATED_180=false coordinate transform. BGR=0 so RGB565 data is
-    // interpreted correctly (red bits = red, blue bits = blue).
-    const uint8_t d[] = {0x80};
+    // UI_ROTATED_180=false coordinate transform. BGR=1 is required by this
+    // display variant; all color constants in DisplayManager.cpp are stored
+    // in BGR565 format (bits[15:11]=blue, bits[4:0]=red) to compensate.
+    const uint8_t d[] = {0x88};
     sendCommandWithData(0x36, d, 1);
   }
   {
