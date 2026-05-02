@@ -28,14 +28,16 @@ constexpr int kMaxTextScale = 1;
 constexpr uint8_t kGlyphAlphaThreshold = 16;
 constexpr uint16_t kTrueBlack = 0x0000;
 constexpr uint16_t kPureWhite = 0xFFFF;
-constexpr uint16_t kDarkWordColor = 0xFFFF;
+constexpr uint16_t kDarkBackground = 0x1881;
+constexpr uint16_t kDarkWordColor = 0xF6F7;
+constexpr uint16_t kDarkFocusColor = 0xE388;
 constexpr uint16_t kLightWordColor = 0x0000;
 constexpr uint16_t kFocusLetterColor = 0xF800;
 constexpr uint16_t kNightWordColor = 0xFCE0;
 constexpr uint16_t kNightFocusColor = 0xFA80;
-constexpr uint16_t kDarkMenuDimColor = 0x8410;
+constexpr uint16_t kDarkMenuDimColor = 0x8B8A;
 constexpr uint16_t kLightMenuDimColor = 0x6B4D;
-constexpr uint16_t kDarkFooterColor = 0x528A;
+constexpr uint16_t kDarkFooterColor = 0x6AC8;
 constexpr uint16_t kLightFooterColor = 0x5ACB;
 constexpr uint8_t kNightDimAlpha = 92;
 constexpr uint8_t kNightFooterAlpha = 132;
@@ -954,7 +956,7 @@ uint16_t DisplayManager::backgroundColor() const {
   if (nightMode_) {
     return kTrueBlack;
   }
-  return darkMode_ ? kTrueBlack : kPureWhite;
+  return darkMode_ ? kDarkBackground : kPureWhite;
 }
 
 uint16_t DisplayManager::wordColor() const {
@@ -968,7 +970,7 @@ uint16_t DisplayManager::focusColor() const {
   if (nightMode_) {
     return kNightFocusColor;
   }
-  return kFocusLetterColor;
+  return darkMode_ ? kDarkFocusColor : kFocusLetterColor;
 }
 
 uint16_t DisplayManager::dimColor() const {
@@ -986,7 +988,7 @@ uint16_t DisplayManager::footerColor() const {
 }
 
 uint16_t DisplayManager::selectedBarColor() const {
-  return nightMode_ ? focusColor() : kFocusLetterColor;
+  return (nightMode_ || darkMode_) ? focusColor() : kFocusLetterColor;
 }
 
 uint16_t DisplayManager::blendOverBackground(uint16_t rgb565, uint8_t alpha) const {
