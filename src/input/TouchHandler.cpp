@@ -181,6 +181,14 @@ bool TouchHandler::poll(TouchEvent &event) {
   return true;
 }
 
+bool TouchHandler::homeButtonPressedAndClear() {
+  if (homeButtonPressed_) {
+    homeButtonPressed_ = false;
+    return true;
+  }
+  return false;
+}
+
 void TouchHandler::setUiRotated180(bool rotated180) {
   if (uiRotated180_ == rotated180) {
     return;
