@@ -83,7 +83,7 @@ bool UsbMassStorageManager::begin(bool writeEnabled) {
 #else
   (void)writeEnabled;
   statusMessage_ = "USB transfer disabled";
-  Serial.println("[usb-msc] unsupported: build waveshare_esp32s3_usb_msc to enable it");
+  Serial.println("[usb-msc] USB transfer not supported on this build");
   return false;
 #endif
 }
@@ -129,76 +129,6 @@ bool UsbMassStorageManager::configureMsc() {
 
 bool UsbMassStorageManager::beginSdCard() {
   return false;
-#if 0  // Waveshare-only SD MMC path (kept for reference)
-  blockCount_ = 0;
-  blockSize_ = kUsbBlockSize;
-  cardReady_ = false;
-
-  if (sectorBuffer_ == nullptr) {
-    sectorBuffer_ = static_cast<uint8_t *>(
-        heap_caps_malloc(kUsbBlockSize, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL));
-  }
-  if (sectorBuffer_ == nullptr) {
-    Serial.println("[usb-msc] failed to allocate DMA sector buffer");
-    return false;
-  }
-
-  sdmmc_slot_config_t slotConfig = SDMMC_SLOT_CONFIG_DEFAULT();
-#ifdef SOC_SDMMC_USE_GPIO_MATRIX
-  slotConfig.clk = static_cast<gpio_num_t>(BoardConfig::PIN_SD_CLK);
-  slotConfig.cmd = static_cast<gpio_num_t>(BoardConfig::PIN_SD_CMD);
-  slotConfig.d0 = static_cast<gpio_num_t>(BoardConfig::PIN_SD_D0);
-  slotConfig.d1 = GPIO_NUM_NC;
-  slotConfig.d2 = GPIO_NUM_NC;
-  slotConfig.d3 = GPIO_NUM_NC;
-#endif
-  slotConfig.width = 1;
-
-  for (int frequencyKhz : kSdFrequenciesKhz) {
-    std::memset(&card_, 0, sizeof(card_));
-    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
-    host.flags = SDMMC_HOST_FLAG_1BIT;
-    host.slot = SDMMC_HOST_SLOT_1;
-    host.max_freq_khz = frequencyKhz;
-
-    deinitHostIfNeeded();
-    esp_err_t err = host.init();
-    if (err != ESP_OK) {
-      Serial.printf("[usb-msc] host init failed at %d kHz: 0x%x\n", frequencyKhz, err);
-      continue;
-    }
-
-    err = sdmmc_host_init_slot(host.slot, &slotConfig);
-    if (err != ESP_OK) {
-      Serial.printf("[usb-msc] slot init failed at %d kHz: 0x%x\n", frequencyKhz, err);
-      deinitHostIfNeeded();
-      continue;
-    }
-
-    err = sdmmc_card_init(&host, &card_);
-    if (err != ESP_OK) {
-      Serial.printf("[usb-msc] card init failed at %d kHz: 0x%x\n", frequencyKhz, err);
-      deinitHostIfNeeded();
-      continue;
-    }
-
-    if (card_.csd.sector_size != kUsbBlockSize || card_.csd.capacity == 0) {
-      Serial.printf("[usb-msc] unsupported SD geometry: sectors=%d sectorSize=%d\n",
-                    card_.csd.capacity, card_.csd.sector_size);
-      deinitHostIfNeeded();
-      continue;
-    }
-
-    blockCount_ = static_cast<uint32_t>(card_.csd.capacity);
-    blockSize_ = static_cast<uint16_t>(card_.csd.sector_size);
-    cardReady_ = true;
-    Serial.printf("[usb-msc] SD ready for USB at %d kHz (%lu MB)\n", frequencyKhz,
-                  static_cast<unsigned long>(cardSizeBytes() / (1024ULL * 1024ULL)));
-    return true;
-  }
-
-  return false;
-#endif
 }
 
 void UsbMassStorageManager::endSdCard() {

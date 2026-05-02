@@ -856,7 +856,7 @@ bool DisplayManager::begin() {
   lastRenderKey_ = "";
   fillScreen(backgroundColor());
   applyBrightness();
-  ESP_LOGI(kDisplayTag, "AXS15231B LCD initialized");
+  ESP_LOGI(kDisplayTag, "ST7796 LCD initialized");
   return true;
 }
 
