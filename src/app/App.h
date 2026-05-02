@@ -11,7 +11,6 @@
 #include "input/TouchHandler.h"
 #include "reader/ReadingLoop.h"
 #include "storage/StorageManager.h"
-#include "update/OtaUpdater.h"
 #include "usb/UsbMassStorageManager.h"
 
 class App {
@@ -53,9 +52,6 @@ class App {
     SettingsHome,
     SettingsDisplay,
     SettingsPacing,
-    WifiSettings,
-    WifiNetworks,
-    TextEntry,
     TypographyTuning,
     BookPicker,
     ChapterPicker,
@@ -66,57 +62,6 @@ class App {
     Percentage = 0,
     ChapterTime = 1,
     BookTime = 2,
-  };
-
-  enum class TextEntryPurpose : uint8_t {
-    None,
-    WifiPassword,
-  };
-
-  enum class KeyboardMode : uint8_t {
-    Lower,
-    Upper,
-    Symbols,
-  };
-
-  enum class TextEntryAction : uint8_t {
-    Insert,
-    SetLower,
-    SetUpper,
-    SetSymbols,
-    Space,
-    Backspace,
-    Clear,
-    ToggleMask,
-    Save,
-    Cancel,
-  };
-
-  struct WifiNetworkInfo {
-    String ssid;
-    int32_t rssi = 0;
-    uint8_t authMode = 0;
-  };
-
-  struct TextEntryButton {
-    DisplayManager::Button view;
-    TextEntryAction action = TextEntryAction::Insert;
-    String payload;
-  };
-
-  struct TextEntrySession {
-    bool active = false;
-    TextEntryPurpose purpose = TextEntryPurpose::None;
-    KeyboardMode mode = KeyboardMode::Lower;
-    MenuScreen returnScreen = MenuScreen::Main;
-    String title;
-    String prompt;
-    String helperText;
-    String value;
-    String contextValue;
-    size_t maxLength = 63;
-    bool masked = false;
-    bool revealValue = false;
   };
 
   void setState(AppState nextState, uint32_t nowMs);
@@ -159,32 +104,12 @@ class App {
   void selectMenuItem(uint32_t nowMs);
   void openSettings();
   void selectSettingsItem(uint32_t nowMs);
-  void openWifiSettings();
-  void selectWifiSettingsItem(uint32_t nowMs);
   void openTypographyTuning();
   void selectTypographyTuningItem(uint32_t nowMs);
   void cycleTypographyPreviewSample(int direction);
   void rebuildSettingsMenuItems();
   void applyPacingSettings();
-  void maybeAutoCheckForUpdates(uint32_t nowMs);
-  void runFirmwareUpdate(const OtaUpdater::Config &config, bool automatic, uint32_t nowMs);
-  OtaUpdater::Config preferredOtaConfig();
-  void scanWifiNetworks();
-  void renderWifiNetworks();
-  void selectWifiNetworkItem(uint32_t nowMs);
-  void openTextEntry(TextEntryPurpose purpose, const String &title, const String &prompt,
-                     const String &helperText, const String &initialValue,
-                     const String &contextValue, bool masked, size_t maxLength,
-                     MenuScreen returnScreen);
-  void rebuildTextEntryButtons();
-  void renderTextEntry();
-  bool handleTextEntryTap(uint16_t x, uint16_t y, uint32_t nowMs);
-  void activateTextEntryButton(size_t buttonIndex, uint32_t nowMs);
-  void commitTextEntry(uint32_t nowMs);
-  String configuredWifiSsid();
-  bool otaAutoCheckEnabled();
   String pacingDelayLabel(uint16_t delayMs) const;
-  String firmwareUpdateMenuLabel() const;
   String themeModeLabel() const;
   String phantomWordsLabel() const;
   String focusHighlightLabel() const;
@@ -267,7 +192,6 @@ class App {
   ButtonHandler button3_;
   TouchHandler touch_;
   StorageManager storage_;
-  OtaUpdater otaUpdater_;
   UsbMassStorageManager usbTransfer_;
   Preferences preferences_;
   PausedTouchSession pausedTouch_;
@@ -286,7 +210,6 @@ class App {
   size_t currentBookIndex_ = 0;
   size_t menuSelectedIndex_ = 0;
   size_t settingsSelectedIndex_ = 0;
-  size_t wifiNetworkSelectedIndex_ = 0;
   size_t bookPickerSelectedIndex_ = 0;
   size_t chapterPickerSelectedIndex_ = 0;
   size_t restartConfirmSelectedIndex_ = 0;
@@ -300,19 +223,15 @@ class App {
   MenuScreen menuScreen_ = MenuScreen::Main;
   MenuScreen restartConfirmReturnScreen_ = MenuScreen::Main;
   std::vector<String> settingsMenuItems_;
-  std::vector<DisplayManager::LibraryItem> wifiNetworkMenuItems_;
   std::vector<DisplayManager::LibraryItem> bookMenuItems_;
   std::vector<size_t> bookPickerBookIndices_;
   std::vector<String> chapterMenuItems_;
   std::vector<ChapterMarker> chapterMarkers_;
   std::vector<size_t> paragraphStarts_;
   std::vector<DisplayManager::ContextWord> contextPreviewWords_;
-  std::vector<WifiNetworkInfo> wifiNetworks_;
-  std::vector<TextEntryButton> textEntryButtons_;
   String currentBookPath_;
   String currentBookTitle_;
   String batteryLabel_;
-  TextEntrySession textEntrySession_;
   uint16_t lastReaderTapX_ = 0;
   uint16_t lastReaderTapY_ = 0;
   bool touchInitialized_ = false;
