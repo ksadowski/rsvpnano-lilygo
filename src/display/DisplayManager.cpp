@@ -1002,12 +1002,14 @@ uint16_t DisplayManager::blendOverBackground(uint16_t rgb565, uint8_t alpha) con
 
   const uint16_t bg = backgroundColor();
   const uint32_t inverseAlpha = 255U - alpha;
+  // Display is BGR mode: bits[15:11]=blue, bits[4:0]=red
   const uint32_t r =
-      ((((rgb565 >> 11) & 0x1F) * alpha) + (((bg >> 11) & 0x1F) * inverseAlpha)) / 255U;
+      ((((rgb565 & 0x1F) * alpha) + ((bg & 0x1F) * inverseAlpha)) / 255U);
   const uint32_t g =
       ((((rgb565 >> 5) & 0x3F) * alpha) + (((bg >> 5) & 0x3F) * inverseAlpha)) / 255U;
-  const uint32_t b = (((rgb565 & 0x1F) * alpha) + ((bg & 0x1F) * inverseAlpha)) / 255U;
-  return static_cast<uint16_t>((r << 11) | (g << 5) | b);
+  const uint32_t b =
+      ((((rgb565 >> 11) & 0x1F) * alpha) + (((bg >> 11) & 0x1F) * inverseAlpha)) / 255U;
+  return static_cast<uint16_t>((b << 11) | (g << 5) | r);
 }
 
 int DisplayManager::chooseTextScale(const String &word) const {
