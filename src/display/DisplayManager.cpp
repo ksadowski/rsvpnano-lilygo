@@ -2747,15 +2747,11 @@ void DisplayManager::renderStatus(const String &title, const String &line1, cons
 void DisplayManager::renderProgress(const String &title, const String &line1, const String &line2,
                                     int progressPercent) {
   progressPercent = std::max(-1, std::min(100, progressPercent));
-  const String renderKey =
-      "progress|" + title + "|" + line1 + "|" + line2 + "|" + String(progressPercent) +
-      "|b:" + batteryLabel_ + "|d:" + String(darkMode_ ? 1 : 0) + "|n:" +
-      String(nightMode_ ? 1 : 0);
-  if (!initialized_ || renderKey == lastRenderKey_) {
+  if (!initialized_) {
     return;
   }
 
-  lastRenderKey_ = renderKey;
+  // Don't track render key for progress - always update
 
   const int scale = 1;
   const int virtualWidth = kDisplayWidth;

@@ -2900,6 +2900,9 @@ void App::handleStorageStatus(void *context, const char *title, const char *line
     return;
   }
 
+  Serial.printf("[display-status] %d%% %s | %s | %s\n", progressPercent,
+                title == nullptr ? "" : title, line1 == nullptr ? "" : line1,
+                line2 == nullptr ? "" : line2);
   static_cast<App *>(context)->renderStorageStatus(title, line1, line2, progressPercent);
-  delay(0);
+  delay(10);
 }

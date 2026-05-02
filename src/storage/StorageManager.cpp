@@ -201,14 +201,14 @@ void handleEpubProgress(void *rawContext, const char *line1, const char *line2,
   progressPercent = std::max(0, std::min(100, progressPercent));
   const int overallPercent =
       context->basePercent + ((context->spanPercent * progressPercent) / 100);
-  const String detail = String(line1 == nullptr ? "" : line1) + " - " +
-                        String(line2 == nullptr ? "" : line2);
+  const String detail = String(line2 == nullptr ? "" : line2);
   const char *title = context->title.isEmpty() ? "EPUB" : context->title.c_str();
   Serial.printf("[epub-progress] %d%% %s | %s | %s\n", overallPercent, title,
                 context->label.c_str(), detail.c_str());
-
-  // Keep the display on the static "Converting EPUB" screen while ZIP work is active.
-  // Full-screen redraws from inside this callback have proven risky while the SD archive is open.
+  if (context->statusCallback != nullptr) {
+    context->statusCallback(context->statusContext, title, context->label.c_str(),
+                           detail.c_str(), overallPercent);
+  }
   yield();
   delay(0);
 }

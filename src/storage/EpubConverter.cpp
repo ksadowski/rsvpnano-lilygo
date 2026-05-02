@@ -2,6 +2,7 @@
 
 #include <SD.h>
 #include <SPI.h>
+#include <esp_task_wdt.h>
 #define STORAGE_FS SD
 #include <algorithm>
 #include <cctype>
@@ -67,6 +68,7 @@ uint32_t readLe32(const uint8_t *data) {
 void serviceBackground() {
   yield();
   delay(0);
+  esp_task_wdt_reset();
 }
 
 bool hasWordLimit(size_t maxWords) { return maxWords > 0; }
@@ -1144,7 +1146,7 @@ bool writeXhtmlAsRsvp(const String &html, File &output, size_t &wordCount, size_
     if ((i & 0x3FF) == 0) {
       serviceBackground();
     }
-    if ((i & 0x7FFF) == 0 && itemCount > 0 && html.length() > 0) {
+    if ((i & 0xFFF) == 0 && itemCount > 0 && html.length() > 0) {
       const int contentPercent =
           static_cast<int>((static_cast<uint32_t>(i) * 100UL) / html.length());
       const int itemPercent =
@@ -2141,7 +2143,7 @@ class ZipArchive {
     };
 
     auto reportMaybe = [&](bool force) {
-      if (!force && totalOutputBytes - lastProgressBytes < 32UL * 1024UL) {
+      if (!force && totalOutputBytes - lastProgressBytes < 4UL * 1024UL) {
         return;
       }
       lastProgressBytes = totalOutputBytes;
