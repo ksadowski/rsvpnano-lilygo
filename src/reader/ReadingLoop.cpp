@@ -568,6 +568,84 @@ bool ReadingLoop::atEnd() const {
   return count == 0 || currentIndex_ + 1 >= count;
 }
 
+void ReadingLoop::rewindSentence() {
+  const size_t count = wordCount();
+  if (count == 0) {
+    return;
+  }
+
+  // If current word ends a sentence, we're at the end of a sentence.
+  // Rewind to the start of this sentence.
+  // If current word doesn't end a sentence, we're in the middle of a sentence.
+  // Rewind to the start of the previous sentence.
+  const bool atSentenceEnd = currentWordEndsSentence();
+  size_t targetIndex = currentIndex_;
+
+  if (atSentenceEnd) {
+    // Go back to find the start of the current sentence
+    while (targetIndex > 0) {
+      targetIndex--;
+      const String word = wordAt(targetIndex);
+      if (word.isEmpty()) {
+        continue;
+      }
+      // Check if this word ends a sentence (meaning the next word starts a new one)
+      // Or check if this word starts with uppercase after a sentence-ending word
+      bool prevWordEndsSentence = false;
+      if (targetIndex > 0) {
+        const String prevWord = wordAt(targetIndex - 1);
+        prevWordEndsSentence = checkWordEndsSentence(prevWord, targetIndex);
+      }
+      if (prevWordEndsSentence) {
+        targetIndex++;
+        break;
+      }
+    }
+  } else {
+    // Go back to find the start of the previous sentence
+    while (targetIndex > 0) {
+      targetIndex--;
+      const String word = wordAt(targetIndex);
+      if (word.isEmpty()) {
+        continue;
+      }
+      if (checkWordEndsSentence(word, targetIndex)) {
+        // This word ends a sentence, so the next word starts the current sentence
+        targetIndex++;
+        break;
+      }
+    }
+  }
+
+  seekTo(targetIndex);
+}
+
+bool ReadingLoop::checkWordEndsSentence(const String &word, size_t index) const {
+  if (word.isEmpty()) {
+    return false;
+  }
+
+  bool nextWordStartsLowercase = false;
+  const size_t nextIndex = index + 1;
+  if (source_ && !source_->empty()) {
+    if (nextIndex < source_->size()) {
+      nextWordStartsLowercase = startsWithLowercaseLetter(source_->at(nextIndex));
+    }
+  } else if (nextIndex < kDemoWordCount) {
+    nextWordStartsLowercase = startsWithLowercaseLetter(String(kDemoWords[nextIndex]));
+  }
+
+  switch (trailingRhythmChar(word)) {
+    case '!':
+    case '?':
+      return true;
+    case '.':
+      return !looksLikeAbbreviation(word, nextWordStartsLowercase);
+    default:
+      return false;
+  }
+}
+
 void ReadingLoop::scrub(int steps) {
   seekRelative(currentIndex_, steps);
 }

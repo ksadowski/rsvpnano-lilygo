@@ -811,6 +811,15 @@ void DisplayManager::setNightMode(bool nightMode) {
   lastRenderKey_ = "";
 }
 
+void DisplayManager::setUiRotated180(bool rotated180) {
+  if (uiRotated180_ == rotated180) {
+    return;
+  }
+
+  uiRotated180_ = rotated180;
+  lastRenderKey_ = "";
+}
+
 void DisplayManager::setTypographyConfig(const TypographyConfig &config) {
   TypographyConfig next;
   next.typeface = sanitizeReaderTypeface(config.typeface);
@@ -1582,7 +1591,7 @@ void DisplayManager::flushScaledFrame(int scale, int virtualWidth, int virtualHe
       for (int nativeX = 0; nativeX < kPanelNativeWidth; ++nativeX) {
         int logicalX = kDisplayWidth - 1 - nativeY;
         int logicalY = nativeX;
-        if (BoardConfig::UI_ROTATED_180) {
+        if (uiRotated180_) {
           logicalX = nativeY;
           logicalY = kDisplayHeight - 1 - nativeX;
         }
@@ -1613,9 +1622,9 @@ void DisplayManager::flushFullWidthLogicalBand(int yStart, int yEnd) {
   }
 
   const int physicalXStart =
-      BoardConfig::UI_ROTATED_180 ? (kDisplayHeight - yEnd) : yStart;
+      uiRotated180_ ? (kDisplayHeight - yEnd) : yStart;
   const int physicalXEnd =
-      BoardConfig::UI_ROTATED_180 ? (kDisplayHeight - yStart) : yEnd;
+      uiRotated180_ ? (kDisplayHeight - yStart) : yEnd;
   const int physicalWidth = physicalXEnd - physicalXStart;
   if (physicalWidth <= 0 || txBuffer_ == nullptr) {
     return;
@@ -1633,7 +1642,7 @@ void DisplayManager::flushFullWidthLogicalBand(int yStart, int yEnd) {
         const int nativeX = physicalXStart + localNativeX;
         int logicalX = kDisplayWidth - 1 - nativeY;
         int logicalY = nativeX;
-        if (BoardConfig::UI_ROTATED_180) {
+        if (uiRotated180_) {
           logicalX = nativeY;
           logicalY = kDisplayHeight - 1 - nativeX;
         }

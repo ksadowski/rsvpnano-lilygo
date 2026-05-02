@@ -23,6 +23,7 @@ class ReadingLoop {
   void scrub(int steps);
   void seekTo(size_t wordIndex);
   void seekRelative(size_t baseIndex, int steps);
+  void rewindSentence();
   void adjustWpm(int delta);
   void setWpm(uint16_t wpm);
   void setPacingConfig(const PacingConfig &config);
@@ -43,6 +44,7 @@ class ReadingLoop {
   bool advance(size_t steps);
   void setCurrentWordFromIndex();
   bool usingLoadedBook() const;
+  bool checkWordEndsSentence(const String &word, size_t index) const;
 
   size_t currentIndex_ = 0;
   uint32_t lastAdvanceMs_ = 0;

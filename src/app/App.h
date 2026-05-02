@@ -20,6 +20,11 @@ class App {
     Scroll = 1,
   };
 
+  enum class HandednessMode : uint8_t {
+    Right = 0,
+    Left = 1,
+  };
+
   App();
 
   void begin();
@@ -80,6 +85,7 @@ class App {
   void cycleReaderMode(uint32_t nowMs);
   void togglePhantomWords(uint32_t nowMs);
   void cycleReaderFontSize(uint32_t nowMs);
+  void cycleOrientation(uint32_t nowMs);
   void applyDisplayPreferences(uint32_t nowMs, bool rerender = true);
   void applyTypographySettings(uint32_t nowMs, bool rerender = true);
   uint8_t currentBrightnessPercent() const;
@@ -93,7 +99,9 @@ class App {
   bool shouldFinalizeReaderPause(uint32_t nowMs) const;
   void resetReaderTapTracking();
   bool isFooterMetricTap(uint16_t x, uint16_t y) const;
+  bool isPreviousSentenceTap(uint16_t x) const;
   bool readerFooterVisible() const;
+  void rewindReaderSentence(uint32_t nowMs);
   int scrubStepsForDrag(int deltaX) const;
   void applyScrubTarget(int targetSteps, uint32_t nowMs);
   int browseScrollRatePermille(uint16_t y) const;
@@ -115,6 +123,8 @@ class App {
   String focusHighlightLabel() const;
   String uiLanguageLabel() const;
   String readerModeLabel() const;
+  String handednessLabel() const;
+  bool uiRotated180() const;
   String readerFontSizeLabel() const;
   String readerTypefaceLabel() const;
   String typographyTuningLabel() const;
@@ -254,6 +264,7 @@ class App {
   FooterMetricMode footerMetricMode_ = FooterMetricMode::Percentage;
   bool darkMode_ = true;
   bool nightMode_ = false;
+  HandednessMode handednessMode_ = HandednessMode::Right;
   UiLanguage uiLanguage_ = UiLanguage::English;
   ReaderMode readerMode_ = ReaderMode::Rsvp;
   DisplayManager::TypographyConfig typographyConfig_;

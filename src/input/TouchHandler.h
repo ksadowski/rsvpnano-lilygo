@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "board/BoardConfig.h"
+
 enum class TouchPhase {
   Start,
   Move,
@@ -35,7 +37,7 @@ class TouchHandler {
   uint32_t lastTouchSampleMs_ = 0;
   uint8_t consecutiveReadFailures_ = 0;
   uint8_t emptyTouchSamples_ = 0;
-  bool uiRotated180_ = false;
+  bool uiRotated180_ = BoardConfig::UI_ROTATED_180;
   bool touchActive_ = false;
   uint16_t lastX_ = 0;
   uint16_t lastY_ = 0;
