@@ -244,6 +244,7 @@ class App {
   String batteryLabel_;
   bool lastUsbConnected_ = false;
   uint32_t usbDisconnectMs_ = 0;
+  bool firstBatteryRead_ = true;
   uint32_t lastUsbCheckMs_ = 0;
   uint16_t lastReaderTapX_ = 0;
   uint16_t lastReaderTapY_ = 0;

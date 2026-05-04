@@ -378,7 +378,11 @@ void App::begin() {
 
   logApp("Initializing hardware modules");
   const bool displayReady = display_.begin();
-  updateBatteryStatus(bootStartedMs_, true);
+  // Read USB state on boot to avoid false disconnect delay
+  BoardConfig::BatteryStatus usbStatus;
+  if (BoardConfig::readBatteryStatus(usbStatus)) {
+    lastUsbConnected_ = usbStatus.isUsbConnected;
+  }
 
   if (displayReady) {
     display_.renderCenteredWord("READY");
@@ -417,6 +421,10 @@ void App::begin() {
     invalidateContextPreviewWindow();
     Serial.println("[app] using built-in demo text");
   }
+
+  // Update battery status after library is loaded
+  updateBatteryStatus(bootStartedMs_, true);
+  display_.setBatteryLabel(batteryLabel_);
 
   Serial.printf("[app] WPM=%u interval=%lu ms\n", reader_.wpm(),
                 static_cast<unsigned long>(reader_.wordIntervalMs()));
@@ -923,10 +931,11 @@ bool App::updateBatteryStatus(uint32_t nowMs, bool force) {
   BoardConfig::BatteryStatus status;
   bool readSuccess = BoardConfig::readBatteryStatus(status);
 
-  // If USB was recently disconnected, wait 2s for voltage to stabilize
-  if (!status.isUsbConnected && nowMs - usbDisconnectMs_ < 2000) {
+  // If USB was recently disconnected, wait 2s for voltage to stabilize (skip on first read)
+  if (!firstBatteryRead_ && !status.isUsbConnected && nowMs - usbDisconnectMs_ < 2000) {
     return false;
   }
+  firstBatteryRead_ = false;
 
   lastBatterySampleMs_ = nowMs;
 
