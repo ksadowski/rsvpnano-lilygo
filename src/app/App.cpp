@@ -23,7 +23,7 @@ constexpr uint32_t kBootSplashMs = 750;
 constexpr uint32_t kWpmFeedbackMs = 900;
 constexpr uint32_t kPowerOffHoldMs = 1600;
 constexpr uint32_t kPowerOffReleaseWaitMs = 4000;
-constexpr uint32_t kBatterySampleIntervalMs = 180000;
+constexpr uint32_t kBatterySampleIntervalMs = 30000;
 constexpr uint32_t kTouchPlayHoldMs = 180;
 constexpr uint32_t kPreviewBrowseHoldMs = 240;
 constexpr uint32_t kReaderDoubleTapWindowMs = 320;
@@ -302,7 +302,9 @@ App::App()
       button3_(BoardConfig::PIN_BUTTON3) {}
 
 void App::begin() {
+  ESP_LOGI("App", "Before BoardConfig::begin()");
   BoardConfig::begin();
+  ESP_LOGI("App", "After BoardConfig::begin()");
   button_.begin();
   powerButton_.begin();
   button3_.begin();
@@ -888,23 +890,75 @@ void App::cycleOrientation(uint32_t nowMs) {
 }
 
 bool App::updateBatteryStatus(uint32_t nowMs, bool force) {
-  // Battery sampling toggles shared board hardware; avoid doing that during active reading.
-  if (!force && state_ == AppState::Playing) {
+  // Check USB state every 1s
+  if (nowMs - lastUsbCheckMs_ >= 1000) {
+    lastUsbCheckMs_ = nowMs;
+    BoardConfig::BatteryStatus usbStatus;
+    if (BoardConfig::readBatteryStatus(usbStatus)) {
+      if (usbStatus.isUsbConnected != lastUsbConnected_) {
+        lastUsbConnected_ = usbStatus.isUsbConnected;
+        ESP_LOGI("power", "USB state changed: %d -> %d", !usbStatus.isUsbConnected, usbStatus.isUsbConnected);
+        if (!usbStatus.isUsbConnected) {
+          // USB disconnected: record timestamp for 2s delay
+          usbDisconnectMs_ = nowMs;
+        } else {
+          // USB connected: force immediate update
+          force = true;
+        }
+      }
+    }
+  }
+
+  // Force update if 2s delay after USB disconnect has passed
+  if (!lastUsbConnected_ && nowMs - usbDisconnectMs_ >= 2000 && nowMs - usbDisconnectMs_ < 2000 + 1000) {
+    force = true;
+  }
+
+  // Check interval unless forced
+  if (!force && nowMs - lastBatterySampleMs_ < kBatterySampleIntervalMs) {
     return false;
   }
 
-  if (!force && nowMs - lastBatterySampleMs_ < kBatterySampleIntervalMs) {
+  // Read full battery status
+  BoardConfig::BatteryStatus status;
+  bool readSuccess = BoardConfig::readBatteryStatus(status);
+
+  // If USB was recently disconnected, wait 2s for voltage to stabilize
+  if (!status.isUsbConnected && nowMs - usbDisconnectMs_ < 2000) {
     return false;
   }
 
   lastBatterySampleMs_ = nowMs;
 
-  BoardConfig::BatteryStatus status;
   String nextLabel;
-  if (BoardConfig::readBatteryStatus(status)) {
-    nextLabel = String(status.percent) + "%";
+  if (readSuccess) {
+    if (status.isCharging) {
+      nextLabel = "CHARGE";
+    } else {
+      nextLabel = String(status.percent) + "% " + String(status.voltage, 1) + "V";
+    }
+  } else if (status.isUsbConnected) {
+    nextLabel = "CHARGE";
   } else {
     nextLabel = "";
+  }
+
+  // Always log battery status for debugging
+  if (readSuccess && status.present) {
+    const char *chargeState = status.isCharging ? "CHARGING" : (status.isUsbConnected ? "DONE" : "DISCHARGING");
+    ESP_LOGI("power", "BAT %.3fV %u%% | VBUS %.2fV | I_CHG_LIMIT %umA | %s | NTC%s",
+             status.voltage,
+             static_cast<unsigned int>(status.percent),
+             status.vbusVoltage,
+             static_cast<unsigned int>(status.chargeCurrentLimit),
+             chargeState,
+             status.ntcFault ? " FAULT" : " OK");
+  } else {
+    ESP_LOGI("power", "%s | VBUS %.2fV | USB=%d | present=%d",
+             readSuccess ? "BAT NOT DETECTED" : "READ FAILED",
+             status.vbusVoltage,
+             static_cast<int>(status.isUsbConnected),
+             static_cast<int>(status.present));
   }
 
   if (nextLabel == batteryLabel_) {
@@ -913,12 +967,6 @@ bool App::updateBatteryStatus(uint32_t nowMs, bool force) {
 
   batteryLabel_ = nextLabel;
   display_.setBatteryLabel(batteryLabel_);
-  if (!batteryLabel_.isEmpty()) {
-    Serial.printf("[power] battery %.2f V (%u%%)\n", status.voltage,
-                  static_cast<unsigned int>(status.percent));
-  } else {
-    Serial.println("[power] battery not detected");
-  }
   return true;
 }
 

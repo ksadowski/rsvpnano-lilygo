@@ -242,6 +242,9 @@ class App {
   String currentBookPath_;
   String currentBookTitle_;
   String batteryLabel_;
+  bool lastUsbConnected_ = false;
+  uint32_t usbDisconnectMs_ = 0;
+  uint32_t lastUsbCheckMs_ = 0;
   uint16_t lastReaderTapX_ = 0;
   uint16_t lastReaderTapY_ = 0;
   bool touchInitialized_ = false;

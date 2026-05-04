@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <XPowersLib.h>
 
 namespace BoardConfig {
 
@@ -35,6 +36,11 @@ struct BatteryStatus {
   bool present = false;
   float voltage = 0.0f;
   uint8_t percent = 0;
+  bool isUsbConnected = false;
+  bool isCharging = false;
+  float vbusVoltage = 0.0f;
+  uint16_t chargeCurrentLimit = 0;  // Set charge current limit (REG10), not actual current
+  bool ntcFault = false;
 };
 
 void begin();
