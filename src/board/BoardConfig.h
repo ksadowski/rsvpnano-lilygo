@@ -38,6 +38,7 @@ struct BatteryStatus {
   uint8_t percent = 0;
   bool isUsbConnected = false;
   bool isCharging = false;
+  uint8_t chargeStatus = 0;  // 0x00=not charging, 0x01=pre-charge, 0x02=fast charge, 0x03=charge done
   float vbusVoltage = 0.0f;
   uint16_t chargeCurrentLimit = 0;  // Set charge current limit (REG10), not actual current
   bool ntcFault = false;

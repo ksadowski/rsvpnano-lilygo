@@ -942,9 +942,23 @@ bool App::updateBatteryStatus(uint32_t nowMs, bool force) {
   String nextLabel;
   if (readSuccess) {
     if (status.isCharging) {
-      nextLabel = "CHARGE";
+      // Show detailed charging status
+      if (status.chargeStatus == 0x01) {
+        nextLabel = "PRE-CHG";
+      } else if (status.chargeStatus == 0x02) {
+        nextLabel = "CHARGING";
+      } else {
+        nextLabel = "CHARGE";
+      }
+    } else if (status.isUsbConnected) {
+      // USB connected but not charging
+      if (status.chargeStatus == 0x03) {
+        nextLabel = "DONE";
+      } else {
+        nextLabel = "SUSPEND";
+      }
     } else {
-      nextLabel = String(status.percent) + "% " + String(status.voltage, 1) + "V";
+      nextLabel = String(status.percent) + "% " + String(status.voltage, 2) + "V";
     }
   } else if (status.isUsbConnected) {
     nextLabel = "CHARGE";

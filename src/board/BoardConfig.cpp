@@ -18,18 +18,28 @@ uint8_t batteryPercentForVoltage(float voltage) {
     float voltage;
     uint8_t percent;
   };
-  // LiHV battery discharge curve (3.8V nominal, 4.35V full charge)
- constexpr Point kCurve[] = {
-      {3.30f, 0},   // Obniżenie progu 0% pozwoli wykorzystać pełną pojemność
-      {3.50f, 5},   // Przy 3.5V masz jeszcze "rezerwę"
-      {3.60f, 12}, 
-      {3.70f, 22}, 
-      {3.80f, 35}, 
-      {3.90f, 50}, 
-      {4.00f, 65}, 
-      {4.15f, 85},  // Lekka korekta dla płynniejszego przejścia
-      {4.35f, 100},
-  };
+
+  // Ostateczna krzywa LiHV (3.40V - 4.20V)
+// Zoptymalizowana pod kątem płynności wskazań i ochrony ogniwa
+constexpr Point kCurve[] = {
+    {3.40f, 0},   // 0% - Bezpieczny próg odcięcia przy włączonym ekranie
+    {3.45f, 2},   
+    {3.50f, 5},   
+    {3.55f, 9},   
+    {3.60f, 14},  
+    {3.65f, 20},  
+    {3.70f, 28},  // Okolice 30% - moment na ostrzeżenie o niskim stanie
+    {3.75f, 37},
+    {3.80f, 48},  // Napięcie nominalne 3.8V wypada teraz blisko połowy (48%)
+    {3.85f, 58},
+    {3.90f, 68},
+    {4.00f, 82},  
+    {4.05f, 88},
+    {4.10f, 93},  
+    {4.15f, 97},  // Dla Twojego 4.14V zobaczysz teraz ok. 96% - bardzo naturalnie
+    {4.20f, 100}, // Twoje obecne maksimum ładowania
+};
+
   constexpr size_t curveSize = sizeof(kCurve) / sizeof(kCurve[0]);
   if (voltage <= kCurve[0].voltage) {
     return kCurve[0].percent;
@@ -85,7 +95,7 @@ void begin() {
   PMU.setPrechargeCurr(64);
   PMU.setChargerConstantCurr(192);
   PMU.enableStatLed();
-  PMU.enableADCMeasure();
+  PMU.enableMeasure();
   ESP_LOGI("PMU", "Configuration done");
 }
 
@@ -111,6 +121,7 @@ bool readBatteryStatus(BatteryStatus &status) {
   status.ntcFault = (PMU.getNTCStatus() != 0);
 
   uint8_t chrgStatus = PMU.chargeStatus();
+  status.chargeStatus = chrgStatus;
   status.isCharging = (chrgStatus == 0x01 || chrgStatus == 0x02);
 
   ESP_LOGI("PMU", "raw: usb=%d vbus=%.2fV bat=%.3fV chrg=0x%02X cur=%umA ntc=%d",
